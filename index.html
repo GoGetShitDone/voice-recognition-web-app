@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>개선된 음성 인식 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        #startButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        #startButton:hover {
+            background-color: #45a049;
+        }
+        #result {
+            width: 80%;
+            max-width: 500px;
+            height: 300px;
+            overflow-y: auto;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #result p {
+            margin: 5px 0;
+        }
+        #result .interim {
+            color: gray;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>개선된 음성 인식 테스트</h1>
+    <button id="startButton">음성 인식 시작</button>
+    <div id="result">음성 인식 결과가 여기에 표시됩니다.</div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const resultDiv = document.getElementById('result');
+    
+        if ('webkitSpeechRecognition' in window) {
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'ko-KR';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+    
+            let isListening = false;
+            let currentParagraph = null;
+    
+            startButton.onclick = function() {
+                if (isListening) {
+                    recognition.stop();
+                    startButton.textContent = '음성 인식 시작';
+                    isListening = false;
+                } else {
+                    recognition.start();
+                    startButton.textContent = '음성 인식 중지';
+                    isListening = true;
+                }
+            };
+    
+            recognition.onstart = function() {
+                resultDiv.innerHTML += '<p>말씀해 주세요...</p>';
+            };
+    
+            recognition.onresult = function(event) {
+                let interimTranscript = '';
+                let finalTranscript = '';
+    
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+    
+                if (finalTranscript !== '') {
+                    resultDiv.innerHTML += '<p><strong>' + finalTranscript + '</strong></p>';
+                    currentParagraph = null;
+                } else if (interimTranscript !== '') {
+                    if (currentParagraph === null) {
+                        currentParagraph = document.createElement('p');
+                        resultDiv.appendChild(currentParagraph);
+                    }
+                    currentParagraph.innerHTML = '<em>' + interimTranscript + '</em>';
+                }
+    
+                resultDiv.scrollTop = resultDiv.scrollHeight;
+            };
+    
+            recognition.onerror = function(event) {
+                console.error('음성 인식 에러:', event.error);
+                resultDiv.innerHTML += '<p>에러: ' + event.error + '</p>';
+            };
+    
+            recognition.onend = function() {
+                if (isListening) {
+                    recognition.start();
+                }
+            };
+        } else {
+            startButton.style.display = 'none';
+            resultDiv.textContent = '이 브라우저는 음성 인식을 지원하지 않습니다.';
+        }
+    </script>
+</body>
+</html>
